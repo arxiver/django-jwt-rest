@@ -1,0 +1,7 @@
+django==3.2.19
+djangorestframework==3.14.0
+django-rest-auth==0.9.5
+django-cors-headers==3.10.1
+django-allauth==0.53.1
+markdown==3.3.7
+django-filter==21.1
