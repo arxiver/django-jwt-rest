@@ -8,6 +8,10 @@ media
 */migrations/*
 # Backup files # 
 *.bak 
+*/.vscode/*
+freeze.txt
+.vscode/**
+.vscode
 
 # If you are using PyCharm # 
 # User-specific stuff
