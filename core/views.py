@@ -64,7 +64,7 @@ def loan_request_update(request):
     return Response(serializer.errors)
 
 
-@swagger('DELETE', 'Delete loan request', LoanRequestSerializer, LoanRequestSerializer)
+@swagger('DELETE', 'Delete loan request', LoanRequestSerializer)
 @api_view(['DELETE'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -123,7 +123,6 @@ def loan_requests_offers(request, pk=None):
         loan_requests_offers = LoanOffer.objects.filter(loan_request=pk).all()
     else:
         loan_requests_offers = LoanOffer.objects.filter(borrower=request.user).prefetch_related('investor').all()
-        print(loan_requests_offers)
     serializer = LoanOfferSerializer(loan_requests_offers, context=serializer_context, many=pk is None)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -182,15 +181,17 @@ def loan_offer_update(request):
     return Response(serializer.errors)
 
 
-@swagger('DELETE', 'Delete loan offer', LoanOfferSerializer, LoanOfferSerializer)
+@swagger('DELETE', 'Delete loan offer', LoanOfferSerializer)
 @api_view(['DELETE'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @csrf_exempt
-def loan_offer_remove(request):
-    loan_offer = LoanOffer.objects.filter(id=request.data.get('id', -1)).all()
+def loan_offer_remove(request, pk):
+    loan_offer = LoanOffer.objects.filter(id=pk).all()
     if not loan_offer:
         return Response({'error': 'Loan offer not found'}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        loan_offer = loan_offer[0]
     if loan_offer.investor != request.user:
         return Response({'error': 'You are not the owner of this loan offer'}, status=status.HTTP_400_BAD_REQUEST)
     if loan_offer.offer_status != 'pending':
@@ -224,7 +225,7 @@ def loan_offers_by_user(request, pk):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@swagger('POST', 'Accept loan offer', LoanOfferSerializer, LoanOfferSerializer)
+@swagger('POST', 'Accept loan offer', LoanOfferSerializer)
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -261,7 +262,7 @@ def loan_offer_accept(request, pk):
 
 
 
-@swagger('POST', 'Cancel loan offer', LoanOfferSerializer, LoanOfferSerializer)
+@swagger('POST', 'Cancel loan offer', LoanOfferSerializer)
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
