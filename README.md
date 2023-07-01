@@ -25,4 +25,3 @@
 
 ## API Documentation
 ![api](./assets/api.png)
-### VIEW API DOCUMENTATION [HERE](./API.md)

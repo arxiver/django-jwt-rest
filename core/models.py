@@ -39,8 +39,9 @@ class LoanRequest(models.Model):
     date_cancelled = models.DateTimeField(blank=True, null=True)
 
 class LoanOffer(models.Model):
-    investor = models.ForeignKey(User, on_delete=models.CASCADE)
-    loan_request = models.ForeignKey(LoanRequest, on_delete=models.CASCADE)
+    investor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='investor')
+    borrower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='borrower')
+    loan_request = models.ForeignKey(LoanRequest, on_delete=models.CASCADE, related_name='loan_request')
     annual_interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
     lenme_fee = models.DecimalField(max_digits=5, decimal_places=2)
     total_loan_amount = models.DecimalField(max_digits=10, decimal_places=2)

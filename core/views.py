@@ -1,11 +1,12 @@
 
 # Create your views here.
+import datetime
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions
-from rest_framework import generics, status
+from rest_framework import status
 from core.models import LoanOffer, LoanRequest
-from .serializers import LoanOfferSerializer, LoanRequestSerializer, UserSerializer
+from .serializers import FundSerializer, LoanOfferCreateSerializer, LoanOfferSerializer, LoanRequestGetSerializer, LoanRequestSerializer, UserSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes, authentication_classes
@@ -16,6 +17,7 @@ from rest_framework.test import APIRequestFactory
 from django.views.decorators.csrf import csrf_exempt
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from .decorators import swagger
 
 LENME_CONSTANT_FEE = 3
 
@@ -29,27 +31,7 @@ serializer_context = {
     'request': Request(request),
 }
 
-
-@swagger_auto_schema(
-    method='post',
-    operation_summary='Create data',
-    request_body=LoanRequestSerializer,
-    responses={
-        201: openapi.Response(
-            description='Created',
-            schema=LoanRequestSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'error': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+@swagger('POST', 'Create new loan request', LoanRequestSerializer, LoanRequestSerializer)
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -57,6 +39,7 @@ serializer_context = {
 def loan_request_create(request):
     loan_request = LoanRequest()
     loan_request.borrower = request.user
+    loan_request.loan_status = 'pending'
     serializer = LoanRequestSerializer(loan_request, data=request.data, context=serializer_context)
     if serializer.is_valid():
         serializer.save()
@@ -64,33 +47,13 @@ def loan_request_create(request):
     return Response(serializer.errors)
 
 
-@swagger_auto_schema(
-    method='put',
-    operation_summary='Update data',
-    request_body=LoanRequestSerializer,
-    responses={
-        200: openapi.Response(
-            description='Updated',
-            schema=LoanRequestSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'error': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
-
+@swagger('PUT', 'Update loan request', LoanRequestSerializer, LoanRequestSerializer)
 @api_view(['PUT'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @csrf_exempt
 def loan_request_update(request):
-    loan_request = LoanRequest.objects.get(id=request.data['id'])
+    loan_request = LoanRequest.objects.get(id=request.data.get('id', -1))
     if loan_request.borrower != request.user:
         return Response({'error': 'You are not the owner of this loan request'}, status=status.HTTP_400_BAD_REQUEST)
     if loan_request.loan_period != 'pending':
@@ -101,32 +64,14 @@ def loan_request_update(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors)
 
-@swagger_auto_schema(
-    method='delete',
-    operation_summary='Delete data',
-    request_body=LoanRequestSerializer,
-    responses={
-        200: openapi.Response(
-            description='Deleted',
-            schema=LoanRequestSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'error': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+
+@swagger('DELETE', 'Delete loan request', LoanRequestSerializer, LoanRequestSerializer)
 @api_view(['DELETE'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @csrf_exempt
 def loan_request_remove(request):
-    loan_request = LoanRequest.objects.get(id=request.data['id'])
+    loan_request = LoanRequest.objects.get(id=request.data.get('id', -1))
     if loan_request.borrower != request.user:
         return Response({'error': 'You are not the owner of this loan request'}, status=status.HTTP_400_BAD_REQUEST)
     if loan_request.loan_period != 'pending':
@@ -134,53 +79,24 @@ def loan_request_remove(request):
     loan_request.delete()
     return Response({'message': 'Loan request deleted successfully'}, status=status.HTTP_200_OK)
 
-@swagger_auto_schema(
-    method='get',
-    operation_summary='Get data',
-    responses={
-        200: openapi.Response(
-            description='Get',
-            schema=LoanRequestSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'error': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+"""
+
+"""
+@swagger('GET', 'Get loans requests of current auth user', LoanRequestGetSerializer, LoanRequestGetSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @csrf_exempt
-def loan_request_get(request):
-    loan_request = LoanRequest.objects.get(id=request.data['id'])
-    serializer = LoanRequestSerializer(loan_request, context=serializer_context)
+def loan_request_get(request, pk=None):
+    if pk:
+        loan_request = LoanRequest.objects.filter(id=pk).all()
+    else:
+        loan_request = LoanRequest.objects.all()
+    serializer = LoanRequestGetSerializer(loan_request, context=serializer_context, many=pk is None)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-@swagger_auto_schema(
-    method='get',
-    operation_summary='Get data',
-    responses={
-        200: openapi.Response(
-            description='Get',
-            schema=LoanRequestSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'error': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+
+@swagger('GET', 'Get loans requests`s by a specific user', LoanRequestSerializer, LoanRequestSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -190,66 +106,69 @@ def loan_requests_by_user(request, pk):
     serializer = LoanRequestSerializer(loan_requests, many=True, context=serializer_context)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-@swagger_auto_schema(
-    method='post',
-    operation_summary='Create data',
-    request_body=LoanOfferSerializer,
-    responses={
-        201: openapi.Response(
-            description='Created',
-            schema=LoanOfferSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'error': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+
+
+@swagger('GET', 'Get loans requests`s offers of current auth user', LoanOfferSerializer, LoanOfferSerializer)
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([permissions.IsAuthenticated])
+@csrf_exempt
+def loan_requests_offers(request, pk=None):
+    if pk:
+        loan_request = LoanRequest.objects.filter(id=pk, borrower=request.user).all()
+        if not loan_request:
+            return Response({'error': 'Loan request not found'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            loan_request = loan_request[0]
+        loan_requests_offers = LoanOffer.objects.filter(loan_request=pk).all()
+    else:
+        loan_requests_offers = LoanOffer.objects.filter(borrower=request.user).prefetch_related('investor').all()
+        print(loan_requests_offers)
+    serializer = LoanOfferSerializer(loan_requests_offers, context=serializer_context, many=pk is None)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+@swagger('POST', 'Create new loan offer', LoanOfferCreateSerializer, LoanOfferSerializer)
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @csrf_exempt
 def loan_offer_create(request):
+    loan_request = LoanRequest.objects.filter(id=request.data.get('loan_request', -1))
+    if not loan_request:
+        return Response({'error': 'Loan request not found'}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        loan_request = loan_request[0]
+    if loan_request.loan_status != 'pending':
+        return Response({'error': 'You can only create a loan offer for a pending loan request'}, status=status.HTTP_400_BAD_REQUEST)
+    if loan_request.borrower == request.user:
+        return Response({'error': 'You can not create a loan offer for your own loan request'}, status=status.HTTP_400_BAD_REQUEST)
+    if (loan_request.loan_amount+LENME_CONSTANT_FEE) > request.user.balance:
+        return Response({'error': 'FUND ALERT! You do not have enough balance to create a loan offer for this loan request, fund your account'}, status=status.HTTP_400_BAD_REQUEST)
+    
     loan_offer = LoanOffer()
+    loan_offer.borrower = loan_request.borrower
     loan_offer.lenme_fee = LENME_CONSTANT_FEE # 3 USD as a constant value
     loan_offer.investor = request.user
-    serializer = LoanOfferSerializer(loan_offer, data=request.data, context=serializer_context)
+    loan_offer.offer_status = 'pending'
+    loan_offer.date_offered = datetime.datetime.now()
+    loan_offer.total_loan_amount = loan_request.loan_amount + loan_offer.lenme_fee
+    serializer = LoanOfferCreateSerializer(loan_offer, data=request.data, context=serializer_context)
     if serializer.is_valid():
         serializer.save()
+        serializer = LoanOfferSerializer(loan_offer, context=serializer_context)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors)
 
-@swagger_auto_schema(
-    method='put',
-    operation_summary='Update data',
-    request_body=LoanOfferSerializer,
-    responses={
-        200: openapi.Response(
-            description='Updated',
-            schema=LoanOfferSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'error': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+
+@swagger('PUT', 'Update loan offer', LoanOfferSerializer, LoanOfferSerializer)
 @api_view(['PUT'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @csrf_exempt
 def loan_offer_update(request):
-    loan_offer = LoanOffer.objects.get(id=request.data['id'])
+    loan_offer = LoanOffer.objects.get(id=request.data.get('id', -1))
     if loan_offer.investor != request.user:
         return Response({'error': 'You are not the owner of this loan offer'}, status=status.HTTP_400_BAD_REQUEST)
     if loan_offer.offer_status != 'pending':
@@ -260,32 +179,14 @@ def loan_offer_update(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors)
 
-@swagger_auto_schema(
-    method='delete',
-    operation_summary='Delete data',
-    request_body=LoanOfferSerializer,
-    responses={
-        200: openapi.Response(
-            description='Deleted',
-            schema=LoanOfferSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'error': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+
+@swagger('DELETE', 'Delete loan offer', LoanOfferSerializer, LoanOfferSerializer)
 @api_view(['DELETE'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @csrf_exempt
 def loan_offer_remove(request):
-    loan_offer = LoanOffer.objects.get(id=request.data['id'])
+    loan_offer = LoanOffer.objects.get(id=request.data.get('id', -1))
     if loan_offer.investor != request.user:
         return Response({'error': 'You are not the owner of this loan offer'}, status=status.HTTP_400_BAD_REQUEST)
     if loan_offer.offer_status != 'pending':
@@ -293,53 +194,22 @@ def loan_offer_remove(request):
     loan_offer.delete()
     return Response({'message': 'Loan offer deleted successfully'}, status=status.HTTP_200_OK)
 
-@swagger_auto_schema(
-    method='get',
-    operation_summary='Get data',
-    responses={
-        200: openapi.Response(
-            description='Get',
-            schema=LoanOfferSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'error': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+
+@swagger('GET', 'Get loan offer', LoanOfferSerializer, LoanOfferSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @csrf_exempt
-def loan_offer_get(request):
-    loan_offer = LoanOffer.objects.get(id=request.data['id'])
-    serializer = LoanOfferSerializer(loan_offer, context=serializer_context)
+def loan_offer_get(request, pk=None):
+    if pk:
+        loan_offer = LoanOffer.objects.filter(id=pk).all()
+    else:
+        loan_offer = LoanOffer.objects.filter(investor=request.user).all()
+    serializer = LoanOfferSerializer(loan_offer, context=serializer_context, many=pk is None)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-@swagger_auto_schema(
-    method='get',
-    operation_summary='Get data',
-    responses={
-        200: openapi.Response(
-            description='Get',
-            schema=LoanOfferSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'error': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+
+@swagger('GET', 'Get loan offers by user', LoanOfferSerializer, LoanOfferSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -350,26 +220,7 @@ def loan_offers_by_user(request, pk):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-
-@swagger_auto_schema(
-    method='post',
-    operation_summary='Create data',
-    responses={
-        201: openapi.Response(
-            description='Created',
-            schema=LoanOfferSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'message': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+@swagger('POST', 'Accept loan offer', LoanOfferSerializer, LoanOfferSerializer)
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -405,24 +256,8 @@ def loan_offer_accept(request, pk):
     return Response({'message': 'Loan offer accepted successfully'}, status=status.HTTP_200_OK)
 
 
-@swagger_auto_schema(
-    method='post',
-    operation_summary='Uop data',
-    responses={
-        201: openapi.Response(
-            description='Created',
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'message': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+
+@swagger('POST', 'Cancel loan offer', LoanOfferSerializer, LoanOfferSerializer)
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -448,25 +283,7 @@ def loan_offer_cancel(request, pk):
     return Response({'message': 'Loan offer cancelled successfully'}, status=status.HTTP_200_OK)
 
 
-@swagger_auto_schema(
-    method='get',
-    operation_summary='Get data',
-    responses={
-        200: openapi.Response(
-            description='Get',
-            schema=UserSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'error': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+@swagger('GET', 'Get user data', UserSerializer, UserSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -477,26 +294,22 @@ def user_get(request, pk=None):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@swagger_auto_schema(
-    method='get',
-    operation_summary='Get data',
-    responses={
-        200: openapi.Response(
-            description='Get',
-            schema=LoanRequestSerializer
-        ),
-        400: openapi.Response(
-            description='Bad request',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
+@swagger('POST', 'Fund user account', FundSerializer, FundSerializer)
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([permissions.IsAuthenticated])
+@csrf_exempt
+def user_fund(request):
+    fund = FundSerializer(data=request.data)
+    if fund.is_valid():
+        user = request.user
+        user.balance += fund.data['amount']
+        user.save()
+        return Response({'message': 'Funded successfully'}, status=status.HTTP_200_OK)
+    return Response(fund.errors, status=status.HTTP_400_BAD_REQUEST)
 
-                    'error': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            )
-        ),
-    }
-)
+
+@swagger('GET', 'Get loans requests of current auth user', LoanRequestSerializer, LoanRequestSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
