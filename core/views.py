@@ -70,7 +70,10 @@ def loan_request_update(request):
 @permission_classes([permissions.IsAuthenticated])
 @csrf_exempt
 def loan_request_remove(request):
-    loan_request = LoanRequest.objects.get(id=request.data.get('id', -1))
+    loan_request = LoanRequest.objects.filter(id=request.data.get('id', -1)).all()
+    if not loan_request:
+        return Response({'error': 'Loan request not found'}, status=status.HTTP_400_BAD_REQUEST)
+    loan_request = loan_request[0]
     if loan_request.borrower != request.user:
         return Response({'error': 'You are not the owner of this loan request'}, status=status.HTTP_400_BAD_REQUEST)
     if loan_request.loan_period != 'pending':
@@ -79,7 +82,7 @@ def loan_request_remove(request):
     return Response({'message': 'Loan request deleted successfully'}, status=status.HTTP_200_OK)
 
 
-@swagger('GET', 'Get loans requests of current auth user', LoanRequestGetSerializer, LoanRequestGetSerializer)
+@swagger('GET', 'Get loans requests of current auth user', LoanRequestGetSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -93,7 +96,7 @@ def loan_request_get(request, pk=None):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@swagger('GET', 'Get loans requests`s by a specific user', LoanRequestSerializer, LoanRequestSerializer)
+@swagger('GET', 'Get loans requests`s by a specific user', LoanRequestSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -105,7 +108,7 @@ def loan_requests_by_user(request, pk):
 
 
 
-@swagger('GET', 'Get loans requests`s offers of current auth user', LoanOfferSerializer, LoanOfferSerializer)
+@swagger('GET', 'Get loans requests`s offers of current auth user', LoanOfferSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -128,7 +131,7 @@ def loan_requests_offers(request, pk=None):
 """
 LOAN OFFERS
 """
-@swagger('POST', 'Create new loan offer', LoanOfferCreateSerializer, LoanOfferSerializer)
+@swagger('POST', 'Create new loan offer', LoanOfferSerializer, LoanOfferCreateSerializer)
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -185,7 +188,9 @@ def loan_offer_update(request):
 @permission_classes([permissions.IsAuthenticated])
 @csrf_exempt
 def loan_offer_remove(request):
-    loan_offer = LoanOffer.objects.get(id=request.data.get('id', -1))
+    loan_offer = LoanOffer.objects.filter(id=request.data.get('id', -1)).all()
+    if not loan_offer:
+        return Response({'error': 'Loan offer not found'}, status=status.HTTP_400_BAD_REQUEST)
     if loan_offer.investor != request.user:
         return Response({'error': 'You are not the owner of this loan offer'}, status=status.HTTP_400_BAD_REQUEST)
     if loan_offer.offer_status != 'pending':
@@ -194,7 +199,7 @@ def loan_offer_remove(request):
     return Response({'message': 'Loan offer deleted successfully'}, status=status.HTTP_200_OK)
 
 
-@swagger('GET', 'Get loan offer', LoanOfferSerializer, LoanOfferSerializer)
+@swagger('GET', 'Get loan offer', LoanOfferSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -208,7 +213,7 @@ def loan_offer_get(request, pk=None):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@swagger('GET', 'Get loan offers by user', LoanOfferSerializer, LoanOfferSerializer)
+@swagger('GET', 'Get loan offers by user', LoanOfferSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -282,7 +287,7 @@ def loan_offer_cancel(request, pk):
     return Response({'message': 'Loan offer cancelled successfully'}, status=status.HTTP_200_OK)
 
 
-@swagger('GET', 'Get user data', UserSerializer, UserSerializer)
+@swagger('GET', 'Get user data', UserSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
@@ -308,7 +313,7 @@ def user_fund(request):
     return Response(fund.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@swagger('GET', 'Get loans requests of current auth user', LoanRequestSerializer, LoanRequestSerializer)
+@swagger('GET', 'Get loans requests of current auth user', LoanRequestSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])

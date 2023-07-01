@@ -1,10 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-def swagger(method, operation_description, response_schema, body_schema, operation_summary=None):
+def swagger(method, operation_description, response_schema, body_schema=None, operation_summary=None):
     return swagger_auto_schema(
       method=method,
-      body_schema=body_schema,
+      request_body=body_schema,
       operation_description=operation_description,
       operation_summary=operation_summary,
       responses={
