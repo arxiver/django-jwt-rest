@@ -2,7 +2,6 @@
 # Create your views here.
 import datetime
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 from rest_framework import status
 from core.models import LoanOffer, LoanRequest
@@ -15,8 +14,6 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
 from django.views.decorators.csrf import csrf_exempt
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
 from .decorators import swagger
 
 LENME_CONSTANT_FEE = 3
@@ -30,7 +27,9 @@ request = factory.get('/')
 serializer_context = {
     'request': Request(request),
 }
-
+"""
+LOAN REQUESTS
+"""
 @swagger('POST', 'Create new loan request', LoanRequestSerializer, LoanRequestSerializer)
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
@@ -79,9 +78,7 @@ def loan_request_remove(request):
     loan_request.delete()
     return Response({'message': 'Loan request deleted successfully'}, status=status.HTTP_200_OK)
 
-"""
 
-"""
 @swagger('GET', 'Get loans requests of current auth user', LoanRequestGetSerializer, LoanRequestGetSerializer)
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
@@ -128,7 +125,9 @@ def loan_requests_offers(request, pk=None):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-
+"""
+LOAN OFFERS
+"""
 @swagger('POST', 'Create new loan offer', LoanOfferCreateSerializer, LoanOfferSerializer)
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
@@ -314,7 +313,7 @@ def user_fund(request):
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @csrf_exempt
-def user_loans_requests(request, pk=None):
+def loans_requests_of_user(request, pk=None):
     user = User.objects.get(id=pk if pk else request.user.id)
     loan_requests = LoanRequest.objects.filter(borrower=user)
     serializer = LoanRequestSerializer(loan_requests, many=True, context=serializer_context)

@@ -26,7 +26,7 @@ class User(AbstractUser):
         return self.first_name + " " + self.last_name
 
 class LoanRequest(models.Model):
-    borrower = models.ForeignKey(User, on_delete=models.CASCADE)
+    borrower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='request_borrower')
     loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
     loan_period = models.IntegerField()
     loan_status = models.TextField(choices=(
@@ -39,9 +39,9 @@ class LoanRequest(models.Model):
     date_cancelled = models.DateTimeField(blank=True, null=True)
 
 class LoanOffer(models.Model):
-    investor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='investor')
-    borrower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='borrower')
-    loan_request = models.ForeignKey(LoanRequest, on_delete=models.CASCADE, related_name='loan_request')
+    investor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='offer_investor')
+    borrower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='offer_borrower')
+    loan_request = models.ForeignKey(LoanRequest, on_delete=models.CASCADE, related_name='loan_offer_request')
     annual_interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
     lenme_fee = models.DecimalField(max_digits=5, decimal_places=2)
     total_loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -54,3 +54,29 @@ class LoanOffer(models.Model):
     date_approved = models.DateTimeField(blank=True, null=True)
     date_cancelled = models.DateTimeField(blank=True, null=True)
 
+class Loan(models.Model):
+    loan_offer = models.ForeignKey(LoanOffer, on_delete=models.CASCADE, related_name='loan_offer')
+    loan_request = models.ForeignKey(LoanRequest, on_delete=models.CASCADE, related_name='loan_request')
+    loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    loan_status = models.TextField(choices=(
+        ('active', 'active'), 
+        ('done', 'done'), 
+        ('issue', 'issue')
+    ))
+    date_paid = models.DateTimeField(auto_now=True)
+    borrower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='loan_borrower')
+    investor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='loan_investor')
+    next_payment_date = models.DateTimeField(blank=True, null=True)
+    date_cancelled = models.DateTimeField(blank=True, null=True)
+
+
+class LoanPayment(models.Model):
+    loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name='loan')
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_status = models.TextField(choices=(
+        ('pending', 'pending'), 
+        ('paid', 'paid'), 
+        ('cancelled', 'cancelled')
+    ))
+    date_paid = models.DateTimeField(auto_now=True)
+    date_cancelled = models.DateTimeField(blank=True, null=True)

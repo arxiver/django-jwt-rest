@@ -35,5 +35,5 @@ urlpatterns = [
     path('user/get', views.user_get, name='user-get'),
     path('user/fund', views.user_fund, name='user-fund'),
     path('user/<int:pk>', views.user_get, name='user-detail'),
-    path('user/loans-req/<int:pk>', views.user_loans_requests, name='user-loans'),
+    path('user/loans-req/<int:pk>', views.loans_requests_of_user, name='user-loans'),
 ]
