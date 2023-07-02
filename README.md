@@ -25,3 +25,12 @@
 
 ## API Documentation
 ![api](./assets/api.png)
+
+## Demo
+- Investor & Borrower: [Login](./demo/0-login.webm)
+- Borrower: [Create a loan request](./demo/1-create_loan_req.mp4)
+- Borrower: [Get my loan requests](./demo/2-get_loan_requests.webm)
+- Investor: [Create offer](./demo/3-create_offer.webm)
+- Investor: [Get my offers](./demo/4-get_my_offers.webm)
+- Borrower: [Check offers on my loan request](./demo/5-check_requests_offers.webm)
+- Borrower: [Accept offer](./demo/6-accept_offer.webm)
