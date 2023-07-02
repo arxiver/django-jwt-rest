@@ -27,6 +27,7 @@
 ![api](./assets/api.png)
 
 ## Demo
+- Signup (toggle between is_borrower and is_investor): [Signing up as a borrower](./demo/0-signup.webm)
 - Investor & Borrower: [Login](./demo/0-login.webm)
 - Borrower: [Create a loan request](./demo/1-create_loan_req.mp4)
 - Borrower: [Get my loan requests](./demo/2-get_loan_requests.webm)
