@@ -1,10 +1,13 @@
 # Welcome to LMS
 
 ## How to get started
-3. Create a virtual environment ```virtualenv venv```
-4. Activate the virtual environment ```source venv/bin/activate```
-5. Install the requirements ```pip3 install -r requirements.txt```
-6. Run the migrations ``` python manage.py makemigrations core```
+1. Clone the repo ```git clone https://github.com/rrrokhtar/lenme/```
+2. Change directory to the repo ```cd lenme```
+3. Make sure of having virtualenv package installed and python3
+4. Create a virtual environment ```virtualenv venv```
+5. Activate the virtual environment ```source venv/bin/activate```
+6. Install the requirements ```pip3 install -r requirements.txt```
+7. Run the migrations ``` python manage.py makemigrations core```
 6. Run the migrations ```python manage.py migrate```
 8. Run the server ```python manage.py runserver```
 9. Visit the server at ```http://localhost:8000``` which will show you the API documentation
